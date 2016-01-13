@@ -1,6 +1,6 @@
 # Projects By Division
 
-The goal of this project was to allow a user to select a project from Cognos and see it on a map.
+The goal of this application was to allow a user to select a project from Cognos and see it on a map.
 
 The original version used a third party addin to Leaflet to display the [DMD Projects - Active](http://coagisweb.cabq.gov/arcgis/rest/services/public/fullviewer/MapServer/16) REST endpoint. 
 
