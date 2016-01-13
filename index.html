@@ -1,149 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Projects By Division</title>
+
+
+<title>Projects by Division</title>
+
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-<script src="lvector.js"></script> 
-<script src="Layer.js"></script>
-<script src="AGS.js"></script>
-<script src="json2.js"></script>
+<script src="http://cdn-geoweb.s3.amazonaws.com/esri-leaflet/0.0.1-beta.6/esri-leaflet.js"></script>
+<script src="http://cdn-geoweb.s3.amazonaws.com/esri-leaflet-renderers/0.0.1-beta.3/esri-leaflet-renderers.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/json2/20140204/json2.min.js"></script>
 </head>
+
 <body>
-<button onclick='showTheMap(18186)'>Copy Text</button>
+
 <div id="map" style="width: 390px; height: 520px"></div>
+
+
 <script>
 
-
-//how to run: showTheMap(objectid);   eg.  showTheMap(18186);
-
-
-var x;
-
 var map = L.map('map', {center: [35.10418, -106.62987],zoom: 9});
+var tiles = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{opacity:0.7, attribution:"<a href='http://www.openstreetmap.org/'>OSM  </a>| <a href='http://www.cabq.gov/municipaldevelopment'> CABQ DMD</a>"} ).addTo(map);
 
-var tiles = L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"<a href='http://www.openstreetmap.org/'>OSM  </a>| <a href='http://www.cabq.gov/municipaldevelopment'> CABQ DMD</a>"} ).addTo(map);
+// GRAB THE PARAMETERS FROM THE URL
 
-function showTheMap(theObjectid){
+var z=0;
 
-var objectID = theObjectid;
+//Param code from StackOverflow http://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-url-parameter
+var params = {};
 
-var s1="OBJECTID NOT IN(";
-var s2=String(objectID);
-var s3=")";
-var qstring=s1.concat(s2,s3);	
-var points;
-var url;
-var params = "objectIds="+objectID+"&f=json&outSR=4326";
-var theGeom;
-	
-        url = "http://coagisweb.cabq.gov/arcgis/rest/services/public/fullviewer/MapServer/16";
-	query();
-	
-	var trafficEngineering = new lvector.AGS({
-   	 url: "http://coagisweb.cabq.gov/arcgis/rest/services/public/fullviewer/MapServer/16",
-   	 fields: "*",
-   	 uniqueField: "OBJECTID",
-    	autoUpdate:true,
-    	autoUpdateInterval: 100,	
-		scaleRange: [8, 20],
- 		showAll: false,
-		where: qstring,
-		popupTemplate: '<h3>{PROJECTNAME}</h3>',  
-		symbology: {
-    	   	type: "single",
-     	  	 vectorOptions: {
-     	       weight: 4,
-      	      opacity: 1,
-      	      color: "blue"
-		 }    
-    	},
-   
-		clickEvent: function (feature, e) {
-			
-	
-		 }
-	}).setMap(map);
+if (location.search) {
+    var parts = location.search.substring(1).split('&');
 
-	
-   
-
-// QUERY REST TO GET THE OBJECT SELECTED FROM PREVIOUS URL
-var http;
-function query(){
-if (window.XMLHttpRequest)
-  {// code for IE7+, Firefox, Chrome, Opera, Safari
-  http=new XMLHttpRequest();
-  }
-else
-  {// code for IE6, IE5
-  http=new ActiveXObject("Msxml2.XMLHTTP");   
-  }
-//var http = new XMLHttpRequest();
-
-var turl="http://coagisweb.cabq.gov/arcgis/rest/services/public/fullviewer/MapServer/16/query"
-http.open("POST", turl, true);
-
-http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-http.onreadystatechange = function() {
-	if(http.readyState == 4 && http.status == 200) {
-		theGeom= JSON.parse(http.responseText);
-		points = String(theGeom.features[0].geometry.paths);
-		
-
-			x = points.split(",");
-			
-			var lat=2;
-			var long=3;
-			var test=[];
-			test.push([parseFloat(x[0]),parseFloat(x[1])])
-			
-			if(x.length==4)
-				{
-			
-				
-				var poly=L.polyline([[parseFloat(x[1]),parseFloat(x[0])],[parseFloat(x[3]),parseFloat(x[2])]],{color:'red',weight:12}).addTo(map);
-				map.fitBounds(poly.getBounds());
-				}
-			else{
-			for(q=0;q<x.length/3;q++){
-
-				test.push([parseFloat(x[lat]),parseFloat(x[long])])
-				lat=lat+2;
-				long=long+2;
-				
-						}
-						}//end else
-
-
-		var b = [{
-   		 "type": "LineString",
-    		"coordinates":test}];
-
-		var bStyle = {
-  		  "color": "red",
-			"opacity":1,
-   		 "weight": 10    
-			};
-
-		var project = L.geoJson(b, { style: bStyle}).addTo(map);
-		
-		map.fitBounds(project.getBounds());
-		project.bringToFront();
-	
-	
-	}
+    for (var i = 0; i < parts.length; i++) {
+        var nv = parts[i].split('=');
+        if (!nv[0]) continue;
+        params[nv[0]] = nv[1] || true;
+    }
 }
-http.send(params);
-
-
-} //end query
 
 
 
 
-}//showthemap
+q="OBJECTID="+params.objectid;
+var project = L.esri.featureLayer('http://coagisweb.cabq.gov/arcgis/rest/services/public/fullviewer/MapServer/16/',{where:q}).addTo(map);   
+
+project.bindPopup(function (feature) {
+    return L.Util.template('<h3>{PROJECTNAME}</h3><p>{DESCRIPTION}</p>', feature.properties);
+  });
+
+
+
+project.on('load', function(e){
+	if(z<1){
+		var bounds = new L.LatLngBounds();
+		z+=3;
+
+		project.eachFeature(function(layer){
+     
+      			bounds.extend(layer.getBounds());
+      			layer.openPopup();
+    		});
+
+    		map.fitBounds(bounds);
+   
+	}else{}
+
+
+});
 
 
 
